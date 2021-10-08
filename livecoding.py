@@ -4,12 +4,10 @@ from collections import deque
 import random
 import json
 import re
+import math
+import sys
 
-# import jurigged
-# jurigged.watch()
 from icecream import ic
-
-ic.disable()
 from pythonosc import udp_client
 
 osc = udp_client.SimpleUDPClient("127.0.0.1", 57120)
@@ -289,44 +287,60 @@ def er(steps, pulses, shift):
 
 
 er_random = []
-for i in range(100):
-    n = random.randrange(6, 32)
-    k = n / 2
-    w = random.randrange(0, n - 1)
-    er_random.append(er(n, k, w))
+for j in range(0,7):
+    foo=[]
+    for i in range(100):
+        n = random.randrange(64+j*8, 128)
+        k = random.randrange(1+j*8,2+(j+1)*8)
+        w = random.randrange(0, math.floor(n/2))
+        # print(n,k,w)
+        foo.append(er(n, k, w))
+    er_random.append(foo)
+
 
 ## user stuff
 
-global_something = "hiok"
-
+global_something = "ok"
 
 def bpm():
     return 120
 
+def hello(step):
+    fname=sys._getframe().f_code.co_name
+    if not hasattr(globals()[fname],"e"):
+        globals()[fname].v=0
+    v=globals()[fname].v
+    ers=[1,4]
+    e=er_random[6][ers[v]]
+    s=(step%len(e))
+    if not e[s]:
+        return
+    ic(fname,step,s)
+    globals()[fname].v=1-v
 
-def hello():
-    return "fjkd" + global_something
-
-
-def hihat1():
-    hihat1_on = fals
-
-
-def main():
-    hihat1()
-    hihat2()
-
+def h(step):
+    if not hasattr(h,"pulse"):
+        h.pulse=0
+    e=er(4*4,1,0)
+    s=step%len(e)
+    if not e[s]:
+        return
+    ic(h.pulse,step,s)
+    h.pulse=(h.pulse+1)%4
 
 def beep():
     print(chord2midi("Cm7"))
     for note in chord2midi("Am7"):
         osc.send_message("/n", note)
 
+def main(step):
+    hello(step)
+    h(step)
 
-step = 0
-while True:
-    step = (step % 16) + 1
-    beep()
-    print(step, datetime.now(), hello())
-    print(er_random[0])
-    time.sleep(60 / bpm())
+
+if __name__ == "__main__":
+    step = -1
+    while True:
+        step += 1
+        main(step)
+        time.sleep(60 / bpm()/4)
