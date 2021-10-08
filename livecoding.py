@@ -12,23 +12,56 @@ from pythonosc import udp_client
 
 osc = udp_client.SimpleUDPClient("127.0.0.1", 57120)
 
+db_notes = [
+    ["C", "B#", "Bs"],
+    ["Db", "C#", "Cs"],
+    ["D"],
+    ["Eb", "D#", "Ds"],
+    ["E", "Fb"],
+    ["F", "E#", "Es"],
+    ["F#", "Gb", "Fs"],
+    ["G"],
+    ["G#", "Ab", "Gs"],
+    ["A"],
+    ["A#", "Bb", "As"],
+    ["B", "Cb"],
+]
 
 ## helper functions
+def get_note(s):
+    note_name = ""
+    note_index = 0
+    longest = 0
+    for i, notes in enumerate(db_notes):
+        for _, note in enumerate(notes):
+            if len(note) < longest:
+                continue
+            if s.startswith(note):
+                longest = len(note)
+                note_name = note
+                note_index = i
+    if longest == 0:
+        raise ValueError
+    return note_name, note_index
+
+
+def note2midi(note_user):
+    note_user = note_user.replace(' ', '').upper()
+    notes = []
+    while len(note_user) > 0:
+        note_name, note_index = get_note(note_user)
+        note_user = note_user[len(note_name) :]
+        try:
+            octave = re.findall(r"[0-9]+", note_user)[0]
+            note_user = note_user[len(octave) :]
+            octave = int(octave)
+        except:
+            octave = 4
+        notes.append(note_index + 12 * octave)
+    return notes
+
+
 def chord2midi(chord_user):
-    db_notes = [
-        ["C", "B#", "Bs"],
-        ["Db", "C#", "Cs"],
-        ["D"],
-        ["Eb", "D#", "Ds"],
-        ["E", "Fb"],
-        ["F", "E#", "Es"],
-        ["F#", "Gb", "Fs"],
-        ["G"],
-        ["G#", "Ab", "Gs"],
-        ["A"],
-        ["A#", "Bb", "As"],
-        ["B", "Cb"],
-    ]
     db_chords = json.loads(
         """{
   "4": ["1P 4P 7m 10m", "quartal"],
@@ -143,22 +176,6 @@ def chord2midi(chord_user):
 }
 """
     )
-
-    def get_note(s):
-        note_name = ""
-        note_index = 0
-        longest = 0
-        for i, notes in enumerate(db_notes):
-            for _, note in enumerate(notes):
-                if len(note) < longest:
-                    continue
-                if s.startswith(note):
-                    longest = len(note)
-                    note_name = note
-                    note_index = i
-        if longest == 0:
-            raise ValueError
-        return note_name, note_index
 
     def get_chord_type(s):
         longest = 0
@@ -345,6 +362,26 @@ sc_fm.kick = {
     "eqFreq": 134,
     "eqDB": 8,
 }
+sc_fm.hh = {
+    "db": 20,
+    "note": 20,
+    "atk": 0,
+    "rel": 0.1,
+    "pan": 0,
+    "lpf": 16000,
+    "fxsend": -18,
+    "mRatio": 1.5,
+    "cRatio": 45.9,
+    "index": 100,
+    "iScale": 1,
+    "cAtk": 4,
+    "cRel": -8,
+    "noise": 11,
+    "natk": 0.01,
+    "nrel": 0.11,
+    "eqFreq": 1200,
+    "eqDB": 0,
+}
 
 sc_fm.pad = {
     "db": -20,
@@ -367,10 +404,23 @@ sc_fm.pad = {
     "eqDB": 10,
 }
 
+# https://stackoverflow.com/questions/51389691/how-can-i-do-a-precise-metronome
+def loop_main():
+    step = -1
+    delay = d = 60 / bpm() / 4
+    prev = time.perf_counter()
+    while True:
+        step += 1
+        main(step)
+        t = time.perf_counter()
+        delta = t - prev - delay
+        # print('{:+.9f}'.format(delta))
+        d -= delta
+        prev = t
+        time.sleep(d)
+
 
 ## user stuff
-
-global_something = "ok"
 
 
 def bpm():
@@ -383,7 +433,7 @@ def fm_kick(step):
         globals()[fname].v = 0
     v = globals()[fname].v
     notes = [15, 23]
-    e = [er(16, 5, 0), er(16, 2, 0)][v]
+    e = [er(16, 3, 2), er(16, 2, 0)][v]
     s = step % len(e)
     if not e[s]:
         return
@@ -392,8 +442,24 @@ def fm_kick(step):
     patch["note"] = notes[v]
     patch["db"] = 10
     patch["lpf"] = 320
-    patch["fxsend"] = -20
-    ic(step, "kick", patch)
+    patch["fxsend"] = -27
+    sc_fm(patch)
+
+
+def fm_hh(step):
+    fname = sys._getframe().f_code.co_name
+    if not hasattr(globals()[fname], "v"):
+        globals()[fname].v = 0
+    v = globals()[fname].v
+    notes = [65, 53]
+    e = [er(16, 5, 2), er(16, 7, 0)][v]
+    s = step % len(e)
+    if not e[s]:
+        return
+    globals()[fname].v = 1 - v
+    patch = sc_fm.hh.copy()
+    patch["note"] = notes[v]
+    patch["db"] = -27
     sc_fm(patch)
 
 
@@ -407,25 +473,22 @@ def fm_pad(step):
         return
     globals()[fname].pulse = (globals()[fname].pulse + 1) % 4
     pulse = globals()[fname].pulse
-    chords = ["Am/C", "C", "F/C", "Em/B"]
+    chords = ["Am7/C", "Cmaj7/G", "Em7/G", "Fmaj7/A:5"]
     patch = sc_fm.pad.copy()
     patch["atk"] = 60 / bpm() * 2
     patch["rel"] = 60 / bpm() * 2
+    patch["fxsend"] = -5
     patch["db"] = -30
     for note in chord2midi(chords[pulse]):
         patch["note"] = note
-        print(patch)
         sc_fm(patch)
 
 
 def main(step):
     fm_pad(step)
+    # fm_hh(step)
     fm_kick(step)
 
 
 if __name__ == "__main__":
-    step = -1
-    while True:
-        step += 1
-        main(step)
-        time.sleep(60 / bpm() / 4)
+    loop_main()
