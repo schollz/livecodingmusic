@@ -324,6 +324,7 @@ def sc_sample(patch):
         "pan",
         "lpf",
         "sendReverb",
+        "sendDelay",
         "rate",
         "rateLag",
         "start",
@@ -345,6 +346,7 @@ sc_sample.basic = {
     "pan": 0,
     "lpf": 16000,
     "sendReverb": -24,
+    "sendDelay": -24,
     "rate": 1,
     "rateLag": 0,
     "start": 0,
@@ -363,6 +365,7 @@ def sc_fm(patch):
         "pan",
         "lpf",
         "sendReverb",
+        "sendDelay",
         "mRatio",
         "cRatio",
         "index",
@@ -389,6 +392,7 @@ sc_fm.kick = {
     "pan": 0,
     "lpf": 320,
     "sendReverb": -24,
+    "sendDelay": -24,
     "mRatio": 0.4,
     "cRatio": 1.5,
     "index": 0.5,
@@ -409,6 +413,7 @@ sc_fm.hh = {
     "pan": 0,
     "lpf": 16000,
     "sendReverb": -18,
+    "sendDelay": -36,
     "mRatio": 1.5,
     "cRatio": 45.9,
     "index": 100,
@@ -430,6 +435,7 @@ sc_fm.pad = {
     "pan": 0,
     "lpf": 16000,
     "sendReverb": -15,
+    "sendDelay": -15,
     "mRatio": 2,
     "cRatio": 1,
     "index": 1,
@@ -484,16 +490,19 @@ def sample_drums(step):
     patch["reset"] = reset
     patch["end"] = end
     patch["db"] = -15
-    patch["loops"] = 2
+    patch["loops"] = 4
     patch["sendReverb"] = -96
+    patch["sendDelay"] = -96
     patch["lpf"] = 15000
-    if random.random() < 0.1:
+    if random.random() < 0.3:
         patch["rate"] = patch["rate"] * -1
-    if random.random() < 0.2:
+    if random.random() < 0.3:
+        patch["lpf"] = random.random() * 2000 + 200
+    if random.random() < 0.05:
         patch["end"] = start + 1 / random.choice([48, 64, 72, 96])
         patch["reset"] = start
         patch["lpf"] = 2000
-        patch["loops"] = 64
+        patch["loops"] = 128
     sc_sample(patch)
 
 
@@ -522,7 +531,7 @@ def fm_hh(step):
         globals()[fname].v = 0
     v = globals()[fname].v
     notes = [65, 53]
-    e = [er(16, 5, 2), er(16, 7, 0)][v]
+    e = [er(16, 3, 2), er(16, 4, 0)][v]
     s = step % len(e)
     if not e[s]:
         return
@@ -530,6 +539,9 @@ def fm_hh(step):
     patch = sc_fm.hh.copy()
     patch["note"] = notes[v]
     patch["db"] = -17
+    patch["sendDelay"] = -15
+    patch["sendReverb"] = -15
+    ic(step, s)
     sc_fm(patch)
 
 
@@ -546,7 +558,7 @@ def fm_pad(step):
     pulse = globals()[fname].pulse
     patch = sc_fm.pad.copy()
     patch["atk"] = 60 / bpm() * 4
-    patch["rel"] = 60 / bpm() * 4
+    patch["rel"] = 60 / bpm() * 2
     patch["sendReverb"] = -5
     patch["db"] = -30
     for note in chord2midi(chords[pulse]):
@@ -556,8 +568,8 @@ def fm_pad(step):
 
 def main(step):
     sample_drums(step)
-    fm_pad(step)
-    fm_hh(step)
+    # fm_pad(step)
+    # fm_hh(step)
     # fm_kick(step)
     pass
 

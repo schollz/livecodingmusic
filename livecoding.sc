@@ -20,11 +20,11 @@ Routine{
 		s.sync;
 		~busReverb = Bus.audio(s,2);
 		s.sync;
-		~synReverb=Synth.tail(s,"reverb",[\in,~busReverb],s);
+		~synReverb=Synth.tail(s,"reverb",[\in,~busReverb]);
 		s.sync;
 
 		SynthDef("delay", {
-			arg in=0, out=0, secondsPerBeat=1,delayBeats=4,delayFeedback=0.1;
+			arg in=0, out=0, secondsPerBeat=0.03125,delayBeats=4,delayFeedback=0.05;
 			var sig;
 			sig = In.ar(in, 2);
 			sig = CombC.ar(
@@ -39,7 +39,7 @@ Routine{
 		s.sync;
 		~busDelay = Bus.audio(s,2);
 		s.sync;
-		~busDelay=Synth.tail(s,"delay",[\in,~busDelay],s);
+		~synDelay=Synth.tail(s,"delay",[\in,~busDelay]);
 		s.sync;
 
 		SynthDef("fm", {
@@ -100,6 +100,7 @@ Routine{
 
 
 		OSCFunc({ arg msg, time, addr, recvPort;
+			msg.postln;
 			Synth.head(s,\fm, [
 				\db, msg[1],
 				\note, msg[2],
