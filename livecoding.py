@@ -46,7 +46,7 @@ def get_note(s):
 
 
 def note2midi(note_user):
-    note_user = note_user.replace(' ', '').upper()
+    note_user = note_user.replace(" ", "").upper()
     notes = []
     while len(note_user) > 0:
         note_name, note_index = get_note(note_user)
@@ -378,10 +378,14 @@ def sc_fm(patch):
         "eqFreq",
         "eqDB",
     ]
-    parm_send = []
-    for parm in parms:
-        parm_send.append(patch[parm])
-    osc.send_message("/fm", parm_send)
+    if "notes" not in patch.keys():
+        patch["notes"] = [patch["note"]]
+    for note in patch["notes"]:
+        parm_send = []
+        patch["note"] = note
+        for parm in parms:
+            parm_send.append(patch[parm])
+        osc.send_message("/fm", parm_send)
 
 
 sc_fm.kick = {
@@ -561,15 +565,14 @@ def fm_pad(step):
     patch["rel"] = 60 / bpm() * 2
     patch["sendReverb"] = -5
     patch["db"] = -30
-    for note in chord2midi(chords[pulse]):
-        patch["note"] = note
-        sc_fm(patch)
+    patch["notes"] = chord2midi(chords[pulse])
+    sc_fm(patch)
 
 
 def main(step):
-    sample_drums(step)
-    # fm_pad(step)
-    # fm_hh(step)
+    # sample_drums(step)
+    fm_pad(step)
+    fm_hh(step)
     # fm_kick(step)
     pass
 
