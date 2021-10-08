@@ -17,6 +17,31 @@ Routine{
 			Out.ar(out, sig);
 		}).add;
 
+		s.sync;
+		~busReverb = Bus.audio(s,2);
+		s.sync;
+		~synReverb=Synth.tail(s,"reverb",[\in,~busReverb],s);
+		s.sync;
+
+		SynthDef("delay", {
+			arg in=0, out=0, secondsPerBeat=1,delayBeats=4,delayFeedback=0.1;
+			var sig;
+			sig = In.ar(in, 2);
+			sig = CombC.ar(
+				sig,
+				2,
+				secondsPerBeat*delayBeats,
+				secondsPerBeat*delayBeats*LinLin.kr(delayFeedback,0,1,2,128),// delayFeedback should vary between 2 and 128
+			);
+			Out.ar(out, sig);
+		}).add;
+
+		s.sync;
+		~busDelay = Bus.audio(s,2);
+		s.sync;
+		~busDelay=Synth.tail(s,"delay",[\in,~busDelay],s);
+		s.sync;
+
 		SynthDef("fm", {
 			arg note=50, mRatio=1, cRatio=1,
 			index=1, iScale=5, cAtk=4, cRel=(-4),
@@ -24,7 +49,8 @@ Routine{
 			noise=0.0, natk=0.01, nrel=3,
 			eqFreq=1200,eqDB=0,
 			lpf=20000, diskout,
-			out=0, outReverb=0, sendReverb=(-25);
+			out=0, outReverb=0, sendReverb=(-25),
+			outDelay=0, sendDelay=(-25);
 			var car, mod, env, iEnv, amp;
 			var freq=note.midicps;
 			amp=Clip.kr(db.dbamp,0,4);
@@ -69,17 +95,12 @@ Routine{
 			//direct out/reverb send
 			Out.ar(out, car);
 			Out.ar(outReverb, car * Clip.kr(sendReverb.dbamp));
+			Out.ar(outDelay, car * Clip.kr(sendDelay.dbamp));
 		}).add;
-
-		s.sync;
-		~busReverb = Bus.audio(s,2);
-		s.sync;
-		~synReverb=Synth("reverb",[\in,~busReverb],s);
-		s.sync;
 
 
 		OSCFunc({ arg msg, time, addr, recvPort;
-			Synth.before(~synReverb,\fm, [
+			Synth.head(s,\fm, [
 				\db, msg[1],
 				\note, msg[2],
 				\atk, msg[3],
@@ -87,24 +108,27 @@ Routine{
 				\pan, msg[5],
 				\lpf, msg[6],
 				\sendReverb, msg[7],
-				\mRatio, msg[8],
-				\cRatio, msg[9],
-				\index, msg[10],
-				\iScale, msg[11],
-				\cAtk, msg[12],
-				\cRel, msg[13],
-				\noise, msg[14],
-				\natk, msg[15],
-				\nrel, msg[16],
-				\eqFreq, msg[17],
-				\eqDB, msg[18],
+				\sendDelay, msg[8],
+				\mRatio, msg[9],
+				\cRatio, msg[10],
+				\index, msg[11],
+				\iScale, msg[12],
+				\cAtk, msg[13],
+				\cRel, msg[14],
+				\noise, msg[15],
+				\natk, msg[16],
+				\nrel, msg[17],
+				\eqFreq, msg[18],
+				\eqDB, msg[19],
 				\outReverb, ~busReverb,
+				\outDelay, ~busDelay,
 			]);
 		}, '/fm');
 
 
 		SynthDef("samplePlayer", {
-			arg out=0, outReverb=0, sendReverb=(-96), bufnum=0, rate=1, rateLag=0,start=0, end=1, reset=0, t_trig=1,
+			arg out=0, outReverb=0, sendReverb=(-96), outDelay=0, sendDelay=(-96),
+			bufnum=0, rate=1, rateLag=0,start=0, end=1, reset=0, t_trig=1,
 			loops=1, db=0, lpf=20000, atk=0,rel=0, pan=0;
 			var snd,snd2,pos,pos2,frames,duration,env;
 			var startA,endA,startB,endB,resetA,resetB,crossfade,aOrB;
@@ -174,6 +198,7 @@ Routine{
 
 			Out.ar(out, snd);
 			Out.ar(outReverb, snd * Clip.kr(sendReverb.dbamp));
+			Out.ar(outDelay, snd * Clip.kr(sendDelay.dbamp));
 		}).add;
 
 		~samples=Dictionary.new;
@@ -186,22 +211,24 @@ Routine{
 			},{
 				if (~samplesPlaying.at(sample)==nil,{
 					~samplesPlaying.put(sample,
-						Synth.before(~synReverb,\samplePlayer, [
+						Synth.head(s,\samplePlayer, [
 							\db, msg[2],
 							\atk, msg[3],
 							\rel, msg[4],
 							\pan, msg[5],
 							\lpf, msg[6],
 							\sendReverb, msg[7],
-							\rate, msg[8],
-							\rateLag, msg[9],
-							\start, msg[10],
-							\end, msg[11],
-							\reset, msg[12],
-							\loops, msg[13],
+							\sendDelay, msg[8],
+							\rate, msg[9],
+							\rateLag, msg[10],
+							\start, msg[11],
+							\end, msg[12],
+							\reset, msg[13],
+							\loops, msg[14],
 							\t_trig, 1,
 							\bufnum, ~samples.at(sample),
 							\outReverb, ~busReverb,
+							\outDelay, ~busDelay,
 						]).onFree({
 							~samplesPlaying.removeAt(sample);
 						});
@@ -212,12 +239,13 @@ Routine{
 						\pan, msg[5],
 						\lpf, msg[6],
 						\sendReverb, msg[7],
-						\rate, msg[8],
-						\rateLag, msg[9],
-						\start, msg[10],
-						\end, msg[11],
-						\reset, msg[12],
-						\loops, msg[13],
+						\sendDelay, msg[8],
+						\rate, msg[9],
+						\rateLag, msg[10],
+						\start, msg[11],
+						\end, msg[12],
+						\reset, msg[13],
+						\loops, msg[14],
 						\t_trig, 1,
 					);
 				});
