@@ -8,6 +8,8 @@ import re
 # import jurigged
 # jurigged.watch()
 from icecream import ic
+
+ic.disable()
 from pythonosc import udp_client
 
 osc = udp_client.SimpleUDPClient("127.0.0.1", 57120)
@@ -241,7 +243,9 @@ def chord2midi(chord_user):
     return notes_interval
 
 
-print(chord2midi("Cm7/G:4"))
+ic(chord2midi("Cm7/G:4"))
+ic(chord2midi("Am7/G:4"))
+
 # er - euclidean rhythms
 # returns table of 0's and 1's
 def er(steps, pulses, shift):
@@ -314,7 +318,9 @@ def main():
 
 
 def beep():
-    osc.send_message("/n", 40)
+    print(chord2midi("Cm7"))
+    for note in chord2midi("Am7"):
+        osc.send_message("/n", note)
 
 
 step = 0
