@@ -1,6 +1,6 @@
 import time
 from datetime import datetime
-from collections import deque
+from collections import deque, OrderedDict
 import random
 import json
 import re
@@ -246,7 +246,7 @@ ic(chord2midi("Am7/G:4"))
 
 # er - euclidean rhythms
 # returns table of 0's and 1's
-def er(steps, pulses, shift):
+def er(steps, pulses, shift=0):
     steps = int(steps)
     pulses = int(pulses)
     if pulses > steps:
@@ -287,55 +287,140 @@ def er(steps, pulses, shift):
 
 
 er_random = []
-for j in range(0,7):
-    foo=[]
+for j in range(0, 7):
+    foo = []
     for i in range(100):
-        n = random.randrange(64+j*8, 128)
-        k = random.randrange(1+j*8,2+(j+1)*8)
-        w = random.randrange(0, math.floor(n/2))
+        n = random.randrange(64 + j * 8, 128)
+        k = random.randrange(1 + j * 8, 2 + (j + 1) * 8)
+        w = random.randrange(0, math.floor(n / 2))
         # print(n,k,w)
         foo.append(er(n, k, w))
     er_random.append(foo)
+
+
+def sc_fm(patch):
+    parms = [
+        "db",
+        "note",
+        "atk",
+        "rel",
+        "pan",
+        "lpf",
+        "fxsend",
+        "mRatio",
+        "cRatio",
+        "index",
+        "iScale",
+        "cAtk",
+        "cRel",
+        "noise",
+        "natk",
+        "nrel",
+        "eqFreq",
+        "eqDB",
+    ]
+    parm_send = []
+    for parm in parms:
+        parm_send.append(patch[parm])
+    osc.send_message("/fm", parm_send)
+
+
+sc_fm.kick = {
+    "db": 20,
+    "note": 20,
+    "atk": 0,
+    "rel": 1,
+    "pan": 0,
+    "lpf": 320,
+    "fxsend": -24,
+    "mRatio": 0.4,
+    "cRatio": 1.5,
+    "index": 0.5,
+    "iScale": 0.5,
+    "cAtk": 4,
+    "cRel": -8,
+    "noise": -7,
+    "natk": 0.01,
+    "nrel": 0.6,
+    "eqFreq": 134,
+    "eqDB": 8,
+}
+
+sc_fm.pad = {
+    "db": -20,
+    "note": 20,
+    "atk": 2,
+    "rel": 2,
+    "pan": 0,
+    "lpf": 16000,
+    "fxsend": -15,
+    "mRatio": 2,
+    "cRatio": 1,
+    "index": 1,
+    "iScale": 4,
+    "cAtk": 0,
+    "cRel": 0,
+    "noise": -96,
+    "natk": 0.01,
+    "nrel": 0.01,
+    "eqFreq": 800,
+    "eqDB": 10,
+}
 
 
 ## user stuff
 
 global_something = "ok"
 
+
 def bpm():
     return 120
 
-def hello(step):
-    fname=sys._getframe().f_code.co_name
-    if not hasattr(globals()[fname],"e"):
-        globals()[fname].v=0
-    v=globals()[fname].v
-    ers=[1,4]
-    e=er_random[6][ers[v]]
-    s=(step%len(e))
+
+def fm_kick(step):
+    fname = sys._getframe().f_code.co_name
+    if not hasattr(globals()[fname], "v"):
+        globals()[fname].v = 0
+    v = globals()[fname].v
+    notes = [15, 23]
+    e = [er(16, 5, 0), er(16, 2, 0)][v]
+    s = step % len(e)
     if not e[s]:
         return
-    ic(fname,step,s)
-    globals()[fname].v=1-v
+    globals()[fname].v = 1 - v
+    patch = sc_fm.kick.copy()
+    patch["note"] = notes[v]
+    patch["db"] = 10
+    patch["lpf"] = 320
+    patch["fxsend"] = -20
+    ic(step, "kick", patch)
+    sc_fm(patch)
 
-def h(step):
-    if not hasattr(h,"pulse"):
-        h.pulse=0
-    e=er(4*4,1,0)
-    s=step%len(e)
+
+def fm_pad(step):
+    fname = sys._getframe().f_code.co_name
+    if not hasattr(globals()[fname], "pulse"):
+        globals()[fname].pulse = -1
+    e = er(16, 1, 0)
+    s = step % len(e)
     if not e[s]:
         return
-    ic(h.pulse,step,s)
-    h.pulse=(h.pulse+1)%4
+    globals()[fname].pulse = (globals()[fname].pulse + 1) % 4
+    pulse = globals()[fname].pulse
+    chords = ["Am/C", "C", "F/C", "Em/B"]
+    patch = sc_fm.pad.copy()
+    patch["atk"] = 60 / bpm() * 2
+    patch["rel"] = 60 / bpm() * 2
+    patch["db"] = -30
+    for note in chord2midi(chords[pulse]):
+        patch["note"] = note
+        print(patch)
+        sc_fm(patch)
 
-def beep():
-    print(chord2midi("Cm7"))
-    for note in chord2midi("Am7"):
-        osc.send_message("/n", note)
 
 def main(step):
-    hello(step)
-    h(step)
+    fm_pad(step)
+    fm_kick(step)
 
 
 if __name__ == "__main__":
@@ -343,4 +428,4 @@ if __name__ == "__main__":
     while True:
         step += 1
         main(step)
-        time.sleep(60 / bpm()/4)
+        time.sleep(60 / bpm() / 4)
