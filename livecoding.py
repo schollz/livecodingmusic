@@ -315,6 +315,45 @@ for j in range(0, 7):
     er_random.append(foo)
 
 
+def sc_sample(patch):
+    parms = [
+        "sample",
+        "db",
+        "atk",
+        "rel",
+        "pan",
+        "lpf",
+        "sendReverb",
+        "rate",
+        "rateLag",
+        "start",
+        "end",
+        "reset",
+        "loops",
+    ]
+    parm_send = []
+    for parm in parms:
+        parm_send.append(patch[parm])
+    osc.send_message("/sample", parm_send)
+
+
+sc_sample.basic = {
+    "sample": "",
+    "db": 0,
+    "atk": 0,
+    "rel": 0.05,
+    "pan": 0,
+    "lpf": 16000,
+    "sendReverb": -24,
+    "rate": 1,
+    "rateLag": 0,
+    "start": 0,
+    "end": 1,
+    "reset": 0,
+    "loops": 1000,
+}
+
+
 def sc_fm(patch):
     parms = [
         "db",
@@ -323,7 +362,7 @@ def sc_fm(patch):
         "rel",
         "pan",
         "lpf",
-        "fxsend",
+        "sendReverb",
         "mRatio",
         "cRatio",
         "index",
@@ -349,7 +388,7 @@ sc_fm.kick = {
     "rel": 1,
     "pan": 0,
     "lpf": 320,
-    "fxsend": -24,
+    "sendReverb": -24,
     "mRatio": 0.4,
     "cRatio": 1.5,
     "index": 0.5,
@@ -369,7 +408,7 @@ sc_fm.hh = {
     "rel": 0.1,
     "pan": 0,
     "lpf": 16000,
-    "fxsend": -18,
+    "sendReverb": -18,
     "mRatio": 1.5,
     "cRatio": 45.9,
     "index": 100,
@@ -390,7 +429,7 @@ sc_fm.pad = {
     "rel": 2,
     "pan": 0,
     "lpf": 16000,
-    "fxsend": -15,
+    "sendReverb": -15,
     "mRatio": 2,
     "cRatio": 1,
     "index": 1,
@@ -404,6 +443,7 @@ sc_fm.pad = {
     "eqDB": 10,
 }
 
+
 # https://stackoverflow.com/questions/51389691/how-can-i-do-a-precise-metronome
 def loop_main():
     step = -1
@@ -413,7 +453,7 @@ def loop_main():
         step += 1
         main(step)
         t = time.perf_counter()
-        delta = t - prev - delay
+        delta = t - prev - (60 / bpm() / 4)
         # print('{:+.9f}'.format(delta))
         d -= delta
         prev = t
@@ -425,6 +465,36 @@ def loop_main():
 
 def bpm():
     return 120
+
+
+def sample_drums(step):
+    if random.random() < 0.75:
+        return
+    sample = "/home/zns/Downloads/livecoding.py/120_8.wav"
+    sample_beats = 8
+    s = step % (sample_beats * 4)
+    start = s / (sample_beats * 4)
+    end = 1
+    reset = start
+    rate = bpm() / 120
+    patch = sc_sample.basic.copy()
+    patch["rate"] = rate
+    patch["sample"] = sample
+    patch["start"] = start
+    patch["reset"] = reset
+    patch["end"] = end
+    patch["db"] = -15
+    patch["loops"] = 2
+    patch["sendReverb"] = -96
+    patch["lpf"] = 15000
+    if random.random() < 0.1:
+        patch["rate"] = patch["rate"] * -1
+    if random.random() < 0.2:
+        patch["end"] = start + 1 / random.choice([48, 64, 72, 96])
+        patch["reset"] = start
+        patch["lpf"] = 2000
+        patch["loops"] = 64
+    sc_sample(patch)
 
 
 def fm_kick(step):
@@ -442,7 +512,7 @@ def fm_kick(step):
     patch["note"] = notes[v]
     patch["db"] = 10
     patch["lpf"] = 320
-    patch["fxsend"] = -27
+    patch["sendReverb"] = -27
     sc_fm(patch)
 
 
@@ -459,7 +529,7 @@ def fm_hh(step):
     globals()[fname].v = 1 - v
     patch = sc_fm.hh.copy()
     patch["note"] = notes[v]
-    patch["db"] = -27
+    patch["db"] = -17
     sc_fm(patch)
 
 
@@ -467,17 +537,17 @@ def fm_pad(step):
     fname = sys._getframe().f_code.co_name
     if not hasattr(globals()[fname], "pulse"):
         globals()[fname].pulse = -1
-    e = er(16, 1, 0)
+    e = er(32, 1, 0)
     s = step % len(e)
     if not e[s]:
         return
-    globals()[fname].pulse = (globals()[fname].pulse + 1) % 4
+    chords = ["Em7/D", "Dmaj7"]
+    globals()[fname].pulse = (globals()[fname].pulse + 1) % len(chords)
     pulse = globals()[fname].pulse
-    chords = ["Am7/C", "Cmaj7/G", "Em7/G", "Fmaj7/A:5"]
     patch = sc_fm.pad.copy()
-    patch["atk"] = 60 / bpm() * 2
-    patch["rel"] = 60 / bpm() * 2
-    patch["fxsend"] = -5
+    patch["atk"] = 60 / bpm() * 4
+    patch["rel"] = 60 / bpm() * 4
+    patch["sendReverb"] = -5
     patch["db"] = -30
     for note in chord2midi(chords[pulse]):
         patch["note"] = note
@@ -485,9 +555,11 @@ def fm_pad(step):
 
 
 def main(step):
+    sample_drums(step)
     fm_pad(step)
-    # fm_hh(step)
-    fm_kick(step)
+    fm_hh(step)
+    # fm_kick(step)
+    pass
 
 
 if __name__ == "__main__":
