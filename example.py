@@ -8,6 +8,7 @@ from livecodingmusic.livecodingmusic import chord2midi
 from livecodingmusic.livecodingmusic import note2midi
 from livecodingmusic.livecodingmusic import er
 from livecodingmusic.livecodingmusic import metronome
+from livecodingmusic.livecodingmusic import record
 from icecream import ic
 
 
@@ -65,35 +66,146 @@ def sample_drums(step):
     if random.random() < 0.5:
         return
     e = Engine("sample")
-    e.set("sample", "120_8.wav")
-    sample_beats = 8
-    sample_tempo = 120
     e.set("sample", "loop_amen1_bpm174.wav")
     sample_beats = 16
     sample_tempo = 174
+    e.set("sample", "120_8.wav")
+    sample_beats = 8
+    sample_tempo = 120
+    e.set("sample", "loop_break2_bpm170.wav")
+    sample_beats = 8
+    sample_tempo = 170
+    e.set("sample", "loop_break3_bpm170.wav")
+    sample_beats = 16
+    sample_tempo = 170
 
     # update the rate to keep in tempo
     tempo, steps_per_beat = bpm()
-    e.set("rate", tempo / sample_tempo)
+    rate = tempo / sample_tempo
+    e.set("rateLag", 0.01)
 
     # update the position to match
     s = step % (sample_beats * steps_per_beat)
     start = s / (sample_beats * steps_per_beat)
-    e.set("pan", -0)
-    e.set("db", -15)
-    e.set("loops", 2)
+    e.set("pan", 0)
+    e.set("db", -5)
+    e.set("loops", 1 / (1 - start))
     e.set("start", start)
     e.set("reset", start)
     e.set("end", 1)
     e.set("lpf", 16000)
+    e.set("delay", -96)
+
+    # if random.random() < 0.05:
+    #     e.set("lpf", random.random() * 2000 + 200)
+    # if random.random() < 0.07:
+    #     e.set("end", start + 1 / random.choice([48, 64, 72, 96]))
+    #     e.set("loops", 32)
+    #     e.set("lpf", random.random() * 4000 + 200)
+    # if random.random() < 0.05:
+    #     rate = rate * -1
+    # if random.random() < 0.07:
+    #     e.set("rateLag", 0.5)
+    #     rate = rate * 2
+    # if random.random() < 0.07:
+    #     e.set("rateLag", 0.5)
+    #     rate = rate * 0.5
+
+    e.set("rate", rate)
+    e.play()
+
+
+def sample_drums2(step):
+    if random.random() < 0.5:
+        return
+    e = Engine("sample")
+    e.set("sample", "loop_amen1_bpm174.wav")
+    sample_beats = 16
+    sample_tempo = 174
+    e.set("sample", "120_8.wav")
+    sample_beats = 8
+    sample_tempo = 120
+    e.set("sample", "loop_break3_bpm170.wav")
+    sample_beats = 16
+    sample_tempo = 170
+    e.set("sample", "loop_break2_bpm170.wav")
+    sample_beats = 8
+    sample_tempo = 170
+
+    # update the rate to keep in tempo
+    tempo, steps_per_beat = bpm()
+    rate = tempo / sample_tempo
+    e.set("rateLag", 0.01)
+
+    # update the position to match
+    s = step % (sample_beats * steps_per_beat)
+    start = s / (sample_beats * steps_per_beat)
+    e.set("pan", 0)
+    e.set("db", -5)
+    e.set("loops", 1 / (1 - start))
+    e.set("start", start)
+    e.set("reset", start)
+    e.set("end", 1)
+    e.set("lpf", 16000)
+    e.set("delay", -96)
+
+    # if random.random() < 0.05:
+    #     e.set("lpf", random.random() * 2000 + 200)
+    # if random.random() < 0.07:
+    #     e.set("end", start + 1 / random.choice([48, 64, 72, 96]))
+    #     e.set("loops", 32)
+    #     e.set("lpf", random.random() * 4000 + 200)
+    # if random.random() < 0.05:
+    #     rate = rate * -1
+    # if random.random() < 0.07:
+    #     e.set("rateLag", 0.5)
+    #     rate = rate * 2
+    # if random.random() < 0.07:
+    #     e.set("rateLag", 0.5)
+    #     rate = rate * 0.5
+
+    e.set("rate", rate)
+    e.play()
+
+
+def sample_glitch(step):
+    if random.random() < 0.5:
+        return
+    e = Engine("sample")
+    e.set("sample", "SO_MM_115_vocalsynth_cashmere_wet_Am__beats35_bpm115.wav")
+    tempo, steps_per_beat = bpm()
+    sample_beats = 35
+
+    # update the rate to keep in tempo
+    rate = 2
+    e.set("rateLag", 0.01)
     if random.random() < 0.05:
-        e.set("rate", -tempo / 120 * 1)
-    if random.random() < 0.1:
+        rate = rate * -1
+    if random.random() < 0.07:
+        e.set("rateLag", 0.5)
+        rate = rate * 2
+    if random.random() < 0.07:
+        e.set("rateLag", 0.5)
+        rate = rate * 0.5
+
+    # update the position to match
+    s = step % (sample_beats * steps_per_beat)
+    start = s / (sample_beats * steps_per_beat)
+    e.set("pan", 0)
+    e.set("db", -15)
+    e.set("loops", 1.5)
+    e.set("start", start)
+    e.set("reset", start)
+    e.set("end", 1)
+    e.set("lpf", 1600)
+    e.set("rate", rate)
+    e.set("delay", 0)
+    if random.random() < 0.05:
         e.set("lpf", random.random() * 2000 + 200)
-    if random.random() < 0.05:
+    if random.random() < 0.07:
         e.set("end", start + 1 / random.choice([48, 64, 72, 96]))
         e.set("loops", 128)
-        e.set("lpf", 2000)
+        e.set("lpf", random.random() * 4000 + 200)
 
     e.play()
 
@@ -115,8 +227,9 @@ def hh(step):
     globals()[fname].v = 1 - globals()[fname].v
     v = globals()[fname].v
 
-    ers = [er(16, 12, 0), er(16, 9, 0)]
     ers = [er(16, 7, 0), er(16, 5, 0)]
+    ers = [er(16, 5, 0), er(16, 3, 0)]
+    ers = [er(16, 11, 0), er(16, 9, 0)]
     if ers[v][step % 16] != 1:
         return
 
@@ -142,16 +255,15 @@ def pad(step):
     e = Engine("synthy")
     e.set("attack", 1.8)
     e.set("decay", 0.1)
-    e.set("reverb", -15)
+    e.set("reverb", -10)
     e.set("db", -10)
-    e.set("lpf", 1620)
+    e.set("lpf", 4620)
     e.play(chord2midi(chords[v]))
 
 
 def notes(step):
-    if er(16, 6, 1)[step % 16] == 0:
-        return
     notes = ["a6", "c6", "e6", "d6", "e7", "a5"]
+    notes += ["a6", "c6", "e6", "b6", "e7", "a5"]
 
     # save state
     fname = sys._getframe().f_code.co_name
@@ -160,16 +272,21 @@ def notes(step):
     globals()[fname].v = (globals()[fname].v + 1) % len(notes)
     v = globals()[fname].v
 
+    ers = [er(16, 3, 1), er(16, 2, 7), er(16, 2, 3)]
+    if ers[v % len(ers)][step % 16] == 0:
+        return
+
     e = Engine("piano")
     e.set("attack", 0.01)
     e.set("decay", 1.5)
-    e.set("db", -30)
-    e.set("lpf", 1600)
+    e.set("db", -20)
+    e.set("lpf", 7600)
+    e.set("delay", -10)
     e.play(note2midi(notes[v]))
 
 
 def notes2(step):
-    if er(16, 4, 1)[step % 16] == 0:
+    if er(16, 2, 1)[step % 16] == 0:
         return
     notes = ["c5", "b4", "a3", "e4", "f5", "g5", "e5"]
 
@@ -205,21 +322,24 @@ def bass(step):
 
     e = Engine("bass")
     e.set("attack", 0.01)
-    e.set("decay", 0.5)
-    e.set("db", 0)
+    e.set("decay", 2.25)
+    e.set("db", 5)
     e.play(note2midi(notes[v]))
 
 
 def loop(step):
+    record(False)
     pad(step)
     bass(step)
-    #kick(step)
-    #hh(step)
-    #sample_drums(step)
-    #sample(step)
-    #sample2(step)
-    #notes(step)
-    #notes2(step)
+    # kick(step)
+    # hh(step)
+    # sample_drums(step)
+    # sample_drums2(step)
+    sample_glitch(step)
+    # sample(step)
+    # sample2(step)
+    # notes(step)
+    # notes2(step)
     pass
 
 

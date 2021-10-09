@@ -450,10 +450,10 @@ class Engine:
                 "eqFreq",
                 "eqDB",
             ]
-            self.patches['basic'] = sc_fm_kick
-            self.patches['kick'] = sc_fm_kick
-            self.patches['hh'] = sc_fm_hh
-            self.patches['pad'] = sc_fm_pad
+            self.patches['basic'] = sc_fm_kick.copy()
+            self.patches['kick'] = sc_fm_kick.copy()
+            self.patches['hh'] = sc_fm_hh.copy()
+            self.patches['pad'] = sc_fm_pad.copy()
         elif name == "sample":
             self.params = [
                 "sample",
@@ -471,7 +471,7 @@ class Engine:
                 "reset",
                 "loops",
             ]
-            self.patches['basic'] = sc_sample_basic
+            self.patches['basic'] = sc_sample_basic.copy()
         elif name == "synthy":
             self.params = [
                 "db",
@@ -484,7 +484,7 @@ class Engine:
                 "delay",
                 "sub",
             ]
-            self.patches['basic'] = sc_synthy_basic
+            self.patches['basic'] = sc_synthy_basic.copy()
         elif name == "piano":
             self.params = [
                 "db",
@@ -496,7 +496,7 @@ class Engine:
                 "reverb",
                 "delay",
             ]
-            self.patches['basic'] = sc_piano_basic
+            self.patches['basic'] = sc_piano_basic.copy()
         elif name == "bass":
             self.params = [
                 "db",
@@ -508,7 +508,7 @@ class Engine:
                 "reverb",
                 "delay",
             ]
-            self.patches['basic'] = sc_bass_basic
+            self.patches['basic'] = sc_bass_basic.copy()
         else:
             raise ValueError("no engine " + name + " exists")
         self.patch = self.patches[patch]
@@ -555,6 +555,19 @@ def metronome(fn, bpm):
         prev = t
         if d > 0:
             time.sleep(d)
+
+
+recording = False
+
+
+def record(on):
+    global recording
+    if on and not recording:
+        osc.send_message("/record", 1)
+        recording = True
+    elif not on and recording:
+        osc.send_message("/record", 0)
+        recording = False
 
 
 ## user stuff

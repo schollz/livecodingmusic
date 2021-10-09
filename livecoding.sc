@@ -405,10 +405,22 @@ Routine{
 		}, '/bass');
 
 
+
+		~oscRecord.free;
+		~oscRecord=OSCFunc({ arg msg, time, addr, recvPort;
+			msg.postln;
+			if (msg[1]>0,{
+				thisProcess.platform.recordingsDir.postln;
+				"recording".postln;
+				s.record;
+			},{
+				"done recording";
+				s.stopRecording;
+			});
+		}, '/record');
+
+
 		"ready to listen to livecoding.py".postln;
-		"recording".postln;
-		s.record;
-		thisProcess.platform.recordingsDir.postln;
 	});
 
 }.play;

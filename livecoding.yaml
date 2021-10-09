@@ -10,8 +10,8 @@ windows:
           - export JACK_NO_START_SERVER=1
           - export JACK_NO_AUDIO_RESERVATION=1
           - jackd -R -dalsa -dhw:1,0 -r 44100 -n3 -p1024 -O2048 &
-          - sleep 1
+          - sleep 6
           - python3 -m jurigged -v example.py
       - shell_command:
-          - sleep 1
+          - sleep 0.1
           - sclang livecoding.sc
