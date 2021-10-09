@@ -4,3 +4,6 @@ run:
 
 test:
 	nosetests tests
+
+music:
+	tmuxp load livecoding.yaml

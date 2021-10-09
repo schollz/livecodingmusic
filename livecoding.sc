@@ -406,6 +406,9 @@ Routine{
 
 
 		"ready to listen to livecoding.py".postln;
+		"recording".postln;
+		s.record;
+		thisProcess.platform.recordingsDir.postln;
 	});
 
 }.play;

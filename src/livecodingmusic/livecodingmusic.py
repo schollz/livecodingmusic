@@ -553,7 +553,8 @@ def metronome(fn, bpm):
         # print('{:+.9f}'.format(delta))
         d -= delta
         prev = t
-        time.sleep(d)
+        if d > 0:
+            time.sleep(d)
 
 
 ## user stuff

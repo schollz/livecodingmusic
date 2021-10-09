@@ -1,0 +1,17 @@
+session_name: livecoding
+suppress_history: false
+windows:
+  - window_name: supercollider
+    layout: main-vertical
+    panes:
+      - shell_command:
+          - vim -c "set nowritebackup" example.py
+      - shell_command:
+          - export JACK_NO_START_SERVER=1
+          - export JACK_NO_AUDIO_RESERVATION=1
+          - jackd -R -dalsa -dhw:1,0 -r 44100 -n3 -p1024 -O2048 &
+          - sleep 1
+          - python3 -m jurigged -v example.py
+      - shell_command:
+          - sleep 1
+          - sclang livecoding.sc

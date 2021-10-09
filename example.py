@@ -37,7 +37,7 @@ def sample(step):
 
 
 def sample2(step):
-    if step % 64 != 0:
+    if step % 48 != 0:
         return
 
     # save state
@@ -115,6 +115,7 @@ def hh(step):
     globals()[fname].v = 1 - globals()[fname].v
     v = globals()[fname].v
 
+    ers = [er(16, 12, 0), er(16, 9, 0)]
     ers = [er(16, 7, 0), er(16, 5, 0)]
     if ers[v][step % 16] != 1:
         return
@@ -168,9 +169,9 @@ def notes(step):
 
 
 def notes2(step):
-    if er(16, 2, 1)[step % 16] == 0:
+    if er(16, 4, 1)[step % 16] == 0:
         return
-    notes = ["c5", "b4", "a3", "e4", "f5", "g5"]
+    notes = ["c5", "b4", "a3", "e4", "f5", "g5", "e5"]
 
     # save state
     fname = sys._getframe().f_code.co_name
@@ -204,21 +205,21 @@ def bass(step):
 
     e = Engine("bass")
     e.set("attack", 0.01)
-    e.set("decay", 2.5)
+    e.set("decay", 0.5)
     e.set("db", 0)
     e.play(note2midi(notes[v]))
 
 
 def loop(step):
-    # bass(step)
-    # pad(step)
-    # kick(step)
-    # hh(step)
-    # sample_drums(step)
-    # sample(step)
-    # sample2(step)
-    # notes(step)
-    # notes2(step)
+    pad(step)
+    bass(step)
+    #kick(step)
+    #hh(step)
+    #sample_drums(step)
+    #sample(step)
+    #sample2(step)
+    #notes(step)
+    #notes2(step)
     pass
 
 
