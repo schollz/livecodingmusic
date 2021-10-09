@@ -344,6 +344,16 @@ sc_piano_basic = {
     "reverb": -24,
     "delay": -24,
 }
+sc_bass_basic = {
+    "db": 0,
+    "note": 20,
+    "attack": 0.01,
+    "decay": 2,
+    "pan": 0,
+    "lpf": 8000,
+    "reverb": -24,
+    "delay": -24,
+}
 
 
 sc_fm_kick = {
@@ -487,6 +497,18 @@ class Engine:
                 "delay",
             ]
             self.patches['basic'] = sc_piano_basic
+        elif name == "bass":
+            self.params = [
+                "db",
+                "note",
+                "attack",
+                "decay",
+                "pan",
+                "lpf",
+                "reverb",
+                "delay",
+            ]
+            self.patches['basic'] = sc_bass_basic
         else:
             raise ValueError("no engine " + name + " exists")
         self.patch = self.patches[patch]

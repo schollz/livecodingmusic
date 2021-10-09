@@ -12,14 +12,16 @@ from icecream import ic
 
 
 def sample(step):
-    if step % 32 != 0:
+    if step % 16 != 0:
+        return
+    if random.random() < 0.1:
         return
 
     # save state
     fname = sys._getframe().f_code.co_name
     if not hasattr(globals()[fname], "v"):
         globals()[fname].v = -1
-    globals()[fname].v = (globals()[fname].v + 1) % 2
+    globals()[fname].v = (globals()[fname].v + 1) % 3
     v = globals()[fname].v
     sample = "SO_MM_115_vocalsynth_cashmere_wet_Am__beats35_bpm115.wav"
     e = Engine("sample")
@@ -27,10 +29,10 @@ def sample(step):
     e.set("sample", sample)
     e.set("rate", 1)
     ic(v, sample)
-    e.set("reset", v * 12.25 / 18)
-    e.set("start", v * 12.25 / 18)
+    e.set("reset", v * 12 / 35)
+    e.set("start", v * 12 / 35)
     e.set("reverb", -15)
-    e.set("db", -15)
+    e.set("db", -20)
     e.play()
 
 
@@ -42,7 +44,7 @@ def sample2(step):
     fname = sys._getframe().f_code.co_name
     if not hasattr(globals()[fname], "v"):
         globals()[fname].v = -1
-    globals()[fname].v = (globals()[fname].v + 1) % 2
+    globals()[fname].v = (globals()[fname].v + 1) % 4
     v = globals()[fname].v
 
     sample = "SO_MM_115_vocalsynth_cerulean_wet_Am__beats38_bpm115.wav"
@@ -53,8 +55,8 @@ def sample2(step):
     e.set("db", -15)
     e.set("lpf", 16000)
 
-    e.set("reset", 0.3 + (0.5 * v))
-    e.set("end", 0.3 + (0.5 * v))
+    e.set("reset", 0.3 + (0.1 * v))
+    e.set("end", 0.3 + (0.1 * v))
     e.set("start", 0)
     e.play()
 
@@ -64,16 +66,20 @@ def sample_drums(step):
         return
     e = Engine("sample")
     e.set("sample", "120_8.wav")
+    sample_beats = 8
+    sample_tempo = 120
+    e.set("sample", "loop_amen1_bpm174.wav")
+    sample_beats = 16
+    sample_tempo = 174
 
     # update the rate to keep in tempo
-    sample_beats = 8
     tempo, steps_per_beat = bpm()
-    e.set("rate", tempo / 120)
+    e.set("rate", tempo / sample_tempo)
 
     # update the position to match
     s = step % (sample_beats * steps_per_beat)
     start = s / (sample_beats * steps_per_beat)
-    e.set("pan", -0.3)
+    e.set("pan", -0)
     e.set("db", -15)
     e.set("loops", 2)
     e.set("start", start)
@@ -81,7 +87,7 @@ def sample_drums(step):
     e.set("end", 1)
     e.set("lpf", 16000)
     if random.random() < 0.05:
-        e.set("rate", -tempo / 120)
+        e.set("rate", -tempo / 120 * 1)
     if random.random() < 0.1:
         e.set("lpf", random.random() * 2000 + 200)
     if random.random() < 0.05:
@@ -136,7 +142,7 @@ def pad(step):
     e.set("attack", 1.8)
     e.set("decay", 0.1)
     e.set("reverb", -15)
-    e.set("db", -20)
+    e.set("db", -10)
     e.set("lpf", 1620)
     e.play(chord2midi(chords[v]))
 
@@ -155,17 +161,16 @@ def notes(step):
 
     e = Engine("piano")
     e.set("attack", 0.01)
-    e.set("decay", 3)
-    e.set("db", -25)
-    e.set("sub", -0.7)
-    e.set("lpf", 1000)
+    e.set("decay", 1.5)
+    e.set("db", -30)
+    e.set("lpf", 1600)
     e.play(note2midi(notes[v]))
 
 
 def notes2(step):
     if er(16, 2, 1)[step % 16] == 0:
         return
-    notes = ["c8", "b7", "a7", "e5", "f6", "g5"]
+    notes = ["c5", "b4", "a3", "e4", "f5", "g5"]
 
     # save state
     fname = sys._getframe().f_code.co_name
@@ -174,23 +179,44 @@ def notes2(step):
     globals()[fname].v = (globals()[fname].v + 1) % len(notes)
     v = globals()[fname].v
 
-    e = Engine("synthy")
+    e = Engine("piano")
     e.set("attack", 0.01)
-    e.set("decay", 3)
-    e.set("db", -12)
-    e.set("lpf", 15100)
+    e.set("decay", 1.5)
+    e.set("db", -20)
+    e.set("lpf", 18100)
     e.set("delay", -5)
-    e.set("sub", -0.2)
+    e.set("sub", 0.5)
+    e.play(note2midi(notes[v]))
+
+
+def bass(step):
+    if step % 16 != 0:
+        return
+    # define some chords
+    notes = ["a2", "c2", "a2", "c2", "a2", "c2", "f2", "e2"]
+
+    # save state
+    fname = sys._getframe().f_code.co_name
+    if not hasattr(globals()[fname], "v"):
+        globals()[fname].v = -1
+    globals()[fname].v = (globals()[fname].v + 1) % len(notes)
+    v = globals()[fname].v
+
+    e = Engine("bass")
+    e.set("attack", 0.01)
+    e.set("decay", 2.5)
+    e.set("db", 0)
     e.play(note2midi(notes[v]))
 
 
 def loop(step):
+    # bass(step)
+    # pad(step)
     # kick(step)
     # hh(step)
     # sample_drums(step)
-    # sample2(step)
     # sample(step)
-    # pad(step)
+    # sample2(step)
     # notes(step)
     # notes2(step)
     pass

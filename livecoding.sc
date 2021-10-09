@@ -156,7 +156,7 @@ Routine{
 		}).add;
 
 		~oscsynthy.free;
-		~oscsynth=OSCFunc({ arg msg, time, addr, recvPort;
+		~oscsynthy=OSCFunc({ arg msg, time, addr, recvPort;
 			msg.postln;
 			Synth.head(s,\synthy, [
 				\db, msg[1],
@@ -356,10 +356,58 @@ Routine{
 		}, '/piano');
 
 
+
+
+
+
+
+		SynthDef("bass", {
+			arg out=0, outReverb=0, sendReverb=(-96),
+			outDelay=0, sendDelay=(-96), db=(-10), note=60,
+			atk=0.01,rel=3,lpf=16000,pan=0;
+			var snd,env,amp;
+			amp=db.dbamp;
+			env=EnvGen.ar(Env.perc(atk,rel),gate:1,doneAction:2);
+
+			snd=Pulse.ar(note.midicps,width:SinOsc.kr(1/3,Rand(0,3)).range(0.2,0.4));
+			snd=snd+LPF.ar(WhiteNoise.ar(SinOsc.kr(1/rrand(3,4)).range(1,rrand(3,4))),2*note.midicps);
+			snd = Pan2.ar(snd,LFTri.kr(1/6.12).range(-0.2,0.2));
+
+			snd = HPF.ar(snd,60);
+			snd = LPF.ar(snd,2*note.midicps);
+
+			snd = snd*(60/note.midicps);
+			snd = LPF.ar(snd,lpf);
+			snd = Balance2.ar(snd[0],snd[1],pan);
+			snd = snd.tanh*amp*env;
+			Out.ar(out,snd);
+			Out.ar(outReverb, snd * Clip.kr(sendReverb.dbamp));
+			Out.ar(outDelay, snd * Clip.kr(sendDelay.dbamp));
+			DetectSilence.ar(snd, doneAction:2);
+		}).add;
+
+
+		~oscBass.free;
+		~oscBass=OSCFunc({ arg msg, time, addr, recvPort;
+			msg.postln;
+			Synth.head(s,\bass, [
+				\db, msg[1],
+				\note, msg[2],
+				\atk, msg[3],
+				\rel, msg[4],
+				\pan, msg[5],
+				\lpf, msg[6],
+				\sendReverb, msg[7],
+				\sendDelay, msg[8],
+				\outReverb, ~busReverb,
+				\outDelay, ~busDelay,
+			]);
+		}, '/bass');
+
+
 		"ready to listen to livecoding.py".postln;
 	});
 
 }.play;
 )
 
-s.record
