@@ -1,3 +1,6 @@
 
 run:
-	python3 -m jurigged -v livecoding.py
+	python3 -m jurigged -v example.py
+
+test:
+	nosetests tests

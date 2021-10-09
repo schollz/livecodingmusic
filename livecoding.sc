@@ -255,6 +255,7 @@ Routine{
 		~oscSample.free;
 		~oscSample=OSCFunc({ arg msg, time, addr, recvPort;
 			var sample=msg[1];
+			msg.postln;
 			if (~samples.at(sample)==nil,{
 				~samples.put(sample,Buffer.read(s,sample));
 			},{

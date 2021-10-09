@@ -6,6 +6,7 @@ import json
 import re
 import math
 import sys
+import os
 
 from icecream import ic
 from pythonosc import udp_client
@@ -48,6 +49,7 @@ def get_note(s):
 def note2midi(note_user):
     note_user = note_user.replace(" ", "").upper()
     notes = []
+    last_octave = 4
     while len(note_user) > 0:
         note_name, note_index = get_note(note_user)
         note_user = note_user[len(note_name) :]
@@ -55,8 +57,9 @@ def note2midi(note_user):
             octave = re.findall(r"[0-9]+", note_user)[0]
             note_user = note_user[len(octave) :]
             octave = int(octave)
+            last_octave = octave
         except:
-            octave = 4
+            octave = last_octave
         notes.append(note_index + 12 * octave)
     return notes
 
@@ -258,9 +261,6 @@ def chord2midi(chord_user):
     return notes_interval
 
 
-ic(chord2midi("Cm7/G:4"))
-ic(chord2midi("Am7/G:4"))
-
 # er - euclidean rhythms
 # returns table of 0's and 1's
 def er(steps, pulses, shift=0):
@@ -303,129 +303,47 @@ def er(steps, pulses, shift=0):
     return pattern
 
 
-er_random = []
-for j in range(0, 7):
-    foo = []
-    for i in range(100):
-        n = random.randrange(64 + j * 8, 128)
-        k = random.randrange(1 + j * 8, 2 + (j + 1) * 8)
-        w = random.randrange(0, math.floor(n / 2))
-        # print(n,k,w)
-        foo.append(er(n, k, w))
-    er_random.append(foo)
+# patch definitions
 
-
-def sc_sample(patch):
-    parms = [
-        "sample",
-        "db",
-        "atk",
-        "rel",
-        "pan",
-        "lpf",
-        "sendReverb",
-        "sendDelay",
-        "rate",
-        "rateLag",
-        "start",
-        "end",
-        "reset",
-        "loops",
-    ]
-    parm_send = []
-    for parm in parms:
-        parm_send.append(patch[parm])
-    osc.send_message("/sample", parm_send)
-
-
-sc_sample.basic = {
+sc_sample_basic = {
     "sample": "",
-    "db": 0,
-    "atk": 0,
-    "rel": 0.05,
+    "db": -20,
+    "attack": 0,
+    "decay": 0.05,
     "pan": 0,
     "lpf": 16000,
-    "sendReverb": -24,
+    "reverb": -24,
     "sendDelay": -24,
     "rate": 1,
     "rateLag": 0,
     "start": 0,
     "end": 1,
     "reset": 0,
-    "loops": 1000,
+    "loops": 2,
+    "note": 0,  # not used
 }
 
-
-def sc_synthy(patch):
-    parms = ["db", "note", "atk", "rel", "pan", "lpf", "sendReverb", "sendDelay", "sub"]
-    if "notes" not in patch.keys():
-        patch["notes"] = [patch["note"]]
-    patch["notes"] = sorted(patch["notes"])
-    for i, note in enumerate(patch["notes"]):
-        parm_send = []
-        patch["note"] = note
-        if i == 0:
-            patch["sub"] = patch["sub"] + 1
-        else:
-            patch["sub"] = 0
-        for parm in parms:
-            parm_send.append(patch[parm])
-        osc.send_message("/synthy", parm_send)
-
-
-sc_synthy.pad = {
-    "db": 20,
+sc_synthy_basic = {
+    "db": 0,
     "note": 20,
-    "atk": 0,
-    "rel": 1,
+    "attack": 0,
+    "decay": 1,
     "pan": 0,
     "lpf": 320,
-    "sendReverb": -24,
+    "reverb": -24,
     "sendDelay": -24,
     "sub": 0,
 }
 
 
-def sc_fm(patch):
-    parms = [
-        "db",
-        "note",
-        "atk",
-        "rel",
-        "pan",
-        "lpf",
-        "sendReverb",
-        "sendDelay",
-        "mRatio",
-        "cRatio",
-        "index",
-        "iScale",
-        "cAtk",
-        "cRel",
-        "noise",
-        "natk",
-        "nrel",
-        "eqFreq",
-        "eqDB",
-    ]
-    if "notes" not in patch.keys():
-        patch["notes"] = [patch["note"]]
-    for note in patch["notes"]:
-        parm_send = []
-        patch["note"] = note
-        for parm in parms:
-            parm_send.append(patch[parm])
-        osc.send_message("/fm", parm_send)
-
-
-sc_fm.kick = {
-    "db": 20,
+sc_fm_kick = {
+    "db": 10,
     "note": 20,
-    "atk": 0,
-    "rel": 1,
+    "attack": 0,
+    "decay": 1,
     "pan": 0,
     "lpf": 320,
-    "sendReverb": -24,
+    "reverb": -24,
     "sendDelay": -24,
     "mRatio": 0.4,
     "cRatio": 1.5,
@@ -439,14 +357,14 @@ sc_fm.kick = {
     "eqFreq": 134,
     "eqDB": 8,
 }
-sc_fm.hh = {
-    "db": 20,
+sc_fm_hh = {
+    "db": -30,
     "note": 20,
-    "atk": 0,
-    "rel": 0.1,
+    "attack": 0,
+    "decay": 0.1,
     "pan": 0,
     "lpf": 16000,
-    "sendReverb": -18,
+    "reverb": -18,
     "sendDelay": -36,
     "mRatio": 1.5,
     "cRatio": 45.9,
@@ -461,14 +379,14 @@ sc_fm.hh = {
     "eqDB": 0,
 }
 
-sc_fm.pad = {
+sc_fm_pad = {
     "db": -20,
     "note": 20,
-    "atk": 2,
-    "rel": 2,
+    "attack": 2,
+    "decay": 2,
     "pan": 0,
     "lpf": 16000,
-    "sendReverb": -15,
+    "reverb": -15,
     "sendDelay": -15,
     "mRatio": 2,
     "cRatio": 1,
@@ -484,16 +402,110 @@ sc_fm.pad = {
 }
 
 
+class Engine:
+    params = []
+
+    def __init__(self, name, patch="basic"):
+        self.name = name
+        self.patches = {}
+        if name == "fm":
+            self.params = [
+                "db",
+                "note",
+                "attack",
+                "decay",
+                "pan",
+                "lpf",
+                "reverb",
+                "sendDelay",
+                "mRatio",
+                "cRatio",
+                "index",
+                "iScale",
+                "cAtk",
+                "cRel",
+                "noise",
+                "natk",
+                "nrel",
+                "eqFreq",
+                "eqDB",
+            ]
+            self.patches['basic'] = sc_fm_kick
+            self.patches['kick'] = sc_fm_kick
+            self.patches['hh'] = sc_fm_hh
+            self.patches['pad'] = sc_fm_pad
+        elif name == "sample":
+            self.params = [
+                "sample",
+                "db",
+                "attack",
+                "decay",
+                "pan",
+                "lpf",
+                "reverb",
+                "sendDelay",
+                "rate",
+                "rateLag",
+                "start",
+                "end",
+                "reset",
+                "loops",
+            ]
+            self.patches['basic'] = sc_sample_basic
+        elif name == "synthy":
+            self.params = [
+                "db",
+                "note",
+                "attack",
+                "decay",
+                "pan",
+                "lpf",
+                "reverb",
+                "sendDelay",
+                "sub",
+            ]
+            self.patches['basic'] = sc_synthy_basic
+        else:
+            raise ValueError("no engine " + name + " exists")
+        self.patch = self.patches[patch]
+
+    def set(self, k, v):
+        if k == "sample":
+            v = os.path.abspath(v)
+        self.patch[k] = v
+
+    def play(self, notes_send=[]):
+        patch = self.patch
+        if "notes" not in patch.keys():
+            patch["notes"] = [patch["note"]]
+        if len(notes_send) > 0:
+            patch["notes"] = notes_send
+        patch["notes"] = sorted(patch["notes"])
+        for i, note in enumerate(patch["notes"]):
+            parm_send = []
+            patch["note"] = note
+            if "sub" in patch:
+                if i == 0:
+                    patch["sub"] = patch["sub"] + 1
+                else:
+                    patch["sub"] = 0
+            for parm in self.params:
+                parm_send.append(patch[parm])
+            osc.send_message("/" + self.name, parm_send)
+
+
 # https://stackoverflow.com/questions/51389691/how-can-i-do-a-precise-metronome
-def loop_main():
+def metronome(fn, bpm):
     step = -1
-    delay = d = 60 / bpm() / 4
+    tempo, steps_per_beat = bpm()
+    delay = d = 60 / tempo / steps_per_beat
     prev = time.perf_counter()
     while True:
         step += 1
-        main(step)
+        fn(step)
         t = time.perf_counter()
-        delta = t - prev - (60 / bpm() / 4)
+        tempo, steps_per_beat = bpm()
+        delta = t - prev - (60 / tempo / steps_per_beat)
         # print('{:+.9f}'.format(delta))
         d -= delta
         prev = t
@@ -503,134 +515,130 @@ def loop_main():
 ## user stuff
 
 
-def bpm():
-    return 135
+# def bpm():
+#     return 135
 
 
-def sample_drums(step):
-    if random.random() < 0.75:
-        return
-    sample = "/home/zns/Downloads/livecoding.py/120_8.wav"
-    sample_beats = 8
-    s = step % (sample_beats * 4)
-    start = s / (sample_beats * 4)
-    end = 1
-    reset = start
-    rate = bpm() / 120
-    patch = sc_sample.basic.copy()
-    patch["rate"] = rate
-    patch["sample"] = sample
-    patch["start"] = start
-    patch["reset"] = reset
-    patch["end"] = end
-    patch["db"] = -15
-    patch["pan"] = -0.3
-    patch["loops"] = 4
-    patch["sendReverb"] = -96
-    patch["sendDelay"] = -96
-    patch["lpf"] = 15000
-    if random.random() < 0.005:
-        patch["rate"] = patch["rate"] * -1
-    if random.random() < 0.1:
-        patch["lpf"] = random.random() * 2000 + 200
-    if random.random() < 0.05:
-        patch["end"] = start + 1 / random.choice([48, 64, 72, 96])
-        patch["reset"] = start
-        patch["lpf"] = 2000
-        patch["loops"] = 128
-    sc_sample(patch)
+# def sample_drums(step):
+#     if random.random() < 0.75:
+#         return
+#     sample = "/home/zns/Downloads/livecoding.py/120_8.wav"
+#     sample_beats = 8
+#     s = step % (sample_beats * 4)
+#     start = s / (sample_beats * 4)
+#     end = 1
+#     reset = start
+#     rate = bpm() / 120
+#     patch = sc_sample.basic.copy()
+#     patch["rate"] = rate
+#     patch["sample"] = sample
+#     patch["start"] = start
+#     patch["reset"] = reset
+#     patch["end"] = end
+#     patch["db"] = -15
+#     patch["pan"] = -0.3
+#     patch["loops"] = 4
+#     patch["reverb"] = -96
+#     patch["sendDelay"] = -96
+#     patch["lpf"] = 15000
+#     if random.random() < 0.005:
+#         patch["rate"] = patch["rate"] * -1
+#     if random.random() < 0.1:
+#         patch["lpf"] = random.random() * 2000 + 200
+#     if random.random() < 0.05:
+#         patch["end"] = start + 1 / random.choice([48, 64, 72, 96])
+#         patch["reset"] = start
+#         patch["lpf"] = 2000
+#         patch["loops"] = 128
+#     sc_sample(patch)
 
 
-def fm_kick(step):
-    fname = sys._getframe().f_code.co_name
-    if not hasattr(globals()[fname], "v"):
-        globals()[fname].v = 0
-    v = globals()[fname].v
-    notes = [15, 23]
-    e = [er(16, 3, 2), er(16, 2, 0)][v]
-    s = step % len(e)
-    if not e[s]:
-        return
-    globals()[fname].v = 1 - v
-    patch = sc_fm.kick.copy()
-    patch["note"] = notes[v]
-    patch["db"] = 10
-    patch["lpf"] = 320
-    patch["sendReverb"] = -27
-    sc_fm(patch)
+# def fm_kick(step):
+#     fname = sys._getframe().f_code.co_name
+#     if not hasattr(globals()[fname], "v"):
+#         globals()[fname].v = 0
+#     v = globals()[fname].v
+#     notes = [15, 23]
+#     e = [er(16, 3, 2), er(16, 2, 0)][v]
+#     s = step % len(e)
+#     if not e[s]:
+#         return
+#     globals()[fname].v = 1 - v
+#     patch = sc_fm.kick.copy()
+#     patch["note"] = notes[v]
+#     patch["db"] = 10
+#     patch["lpf"] = 320
+#     patch["reverb"] = -27
+#     sc_fm(patch)
 
 
-def fm_hh(step):
-    fname = sys._getframe().f_code.co_name
-    if not hasattr(globals()[fname], "v"):
-        globals()[fname].v = 0
-    v = globals()[fname].v
-    notes = [65, 53]
-    e = [er(16, 4, 2), er(16, 3, 0)][v]
-    s = step % len(e)
-    if not e[s]:
-        return
-    globals()[fname].v = 1 - v
-    patch = sc_fm.hh.copy()
-    patch["note"] = notes[v]
-    patch["rel"] = 0.05
-    patch["db"] = -24
-    patch["sendDelay"] = -15
-    patch["sendReverb"] = -25
-    ic(step, s)
-    sc_fm(patch)
+# def fm_hh(step):
+#     fname = sys._getframe().f_code.co_name
+#     if not hasattr(globals()[fname], "v"):
+#         globals()[fname].v = 0
+#     v = globals()[fname].v
+#     notes = [65, 53]
+#     e = [er(16, 4, 2), er(16, 3, 0)][v]
+#     s = step % len(e)
+#     if not e[s]:
+#         return
+#     globals()[fname].v = 1 - v
+#     patch = sc_fm.hh.copy()
+#     patch["note"] = notes[v]
+#     patch["decay"] = 0.05
+#     patch["db"] = -24
+#     patch["sendDelay"] = -15
+#     patch["reverb"] = -25
+#     ic(step, s)
+#     sc_fm(patch)
 
 
-def fm_pad(step):
-    fname = sys._getframe().f_code.co_name
-    if not hasattr(globals()[fname], "pulse"):
-        globals()[fname].pulse = -1
-    e = er(32, 1, 0)
-    s = step % len(e)
-    if not e[s]:
-        return
-    chords = ["C/G", "Em7/D:4", "Am7:4", "F:4"]
-    globals()[fname].pulse = (globals()[fname].pulse + 1) % len(chords)
-    pulse = globals()[fname].pulse
-    patch = sc_fm.pad.copy()
-    patch["atk"] = 60 / bpm() * 4
-    patch["rel"] = 60 / bpm() * 2
-    patch["sendReverb"] = -5
-    patch["db"] = -30
-    patch["notes"] = chord2midi(chords[pulse])
-    sc_fm(patch)
+# def fm_pad(step):
+#     fname = sys._getframe().f_code.co_name
+#     if not hasattr(globals()[fname], "pulse"):
+#         globals()[fname].pulse = -1
+#     e = er(32, 1, 0)
+#     s = step % len(e)
+#     if not e[s]:
+#         return
+#     chords = ["C/G", "Em7/D:4", "Am7:4", "F:4"]
+#     globals()[fname].pulse = (globals()[fname].pulse + 1) % len(chords)
+#     pulse = globals()[fname].pulse
+#     patch = sc_fm.pad.copy()
+#     patch["attack"] = 60 / bpm() * 4
+#     patch["decay"] = 60 / bpm() * 2
+#     patch["reverb"] = -5
+#     patch["db"] = -30
+#     patch["notes"] = chord2midi(chords[pulse])
+#     sc_fm(patch)
 
 
-def synthy_pad(step):
-    fname = sys._getframe().f_code.co_name
-    if not hasattr(globals()[fname], "pulse"):
-        globals()[fname].pulse = -1
-    e = er(32, 1, 0)
-    s = step % len(e)
-    if not e[s]:
-        return
-    chords = ["C:5", "Em7/D:5", "Am7/C:5", "F/C:5"]
-    globals()[fname].pulse = (globals()[fname].pulse + 1) % len(chords)
-    pulse = globals()[fname].pulse
-    patch = sc_synthy.pad.copy()
-    patch["atk"] = 60 / bpm() * 4
-    patch["rel"] = 60 / bpm() * 4
-    patch["sendReverb"] = -5
-    patch["sendDelay"] = 0
-    patch["db"] = 0
-    patch["sub"] = 1
-    patch["notes"] = chord2midi(chords[pulse])
-    sc_synthy(patch)
+# def synthy_pad(step):
+#     fname = sys._getframe().f_code.co_name
+#     if not hasattr(globals()[fname], "pulse"):
+#         globals()[fname].pulse = -1
+#     e = er(32, 1, 0)
+#     s = step % len(e)
+#     if not e[s]:
+#         return
+#     chords = ["C:5", "Em7/D:5", "Am7/C:5", "F/C:5"]
+#     globals()[fname].pulse = (globals()[fname].pulse + 1) % len(chords)
+#     pulse = globals()[fname].pulse
+#     patch = sc_synthy.pad.copy()
+#     patch["attack"] = 60 / bpm() * 4
+#     patch["decay"] = 60 / bpm() * 4
+#     patch["reverb"] = -5
+#     patch["sendDelay"] = 0
+#     patch["db"] = 0
+#     patch["sub"] = 1
+#     patch["notes"] = chord2midi(chords[pulse])
+#     sc_synthy(patch)
 
 
-def main(step):
-    synthy_pad(step)
-    # sample_drums(step)
-    # fm_pad(step)
-    fm_hh(step)
-    # fm_kick(step)
-    pass
-
-
-if __name__ == "__main__":
-    loop_main()
+# def main(step):
+#     synthy_pad(step)
+#     # sample_drums(step)
+#     # fm_pad(step)
+#     fm_hh(step)
+#     # fm_kick(step)
+#     pass
