@@ -97,13 +97,22 @@ def kick(step):
         return
     e = Engine("fm", "kick")
     e.set("reverb", -30)
-    e.set("db", 30)
+    e.set("db", 40)
     e.play()
 
 
 def hh(step):
-    if er(16, 12, 1)[step % 16] != 1:
+    # save state
+    fname = sys._getframe().f_code.co_name
+    if not hasattr(globals()[fname], "v"):
+        globals()[fname].v = 0
+    globals()[fname].v = 1 - globals()[fname].v
+    v = globals()[fname].v
+
+    ers = [er(16, 7, 0), er(16, 5, 0)]
+    if ers[v][step % 16] != 1:
         return
+
     e = Engine("fm", "hh")
     e.set("reverb", -40)
     e.set("db", -25)
@@ -127,7 +136,8 @@ def pad(step):
     e.set("attack", 1.8)
     e.set("decay", 0.1)
     e.set("reverb", -15)
-    e.set("db", -10)
+    e.set("db", -20)
+    e.set("lpf", 1620)
     e.play(chord2midi(chords[v]))
 
 
@@ -143,12 +153,12 @@ def notes(step):
     globals()[fname].v = (globals()[fname].v + 1) % len(notes)
     v = globals()[fname].v
 
-    e = Engine("synthy")
+    e = Engine("piano")
     e.set("attack", 0.01)
-    e.set("decay", 2)
-    e.set("db", -5)
+    e.set("decay", 3)
+    e.set("db", -25)
     e.set("sub", -0.7)
-    e.set("lpf", 12000)
+    e.set("lpf", 1000)
     e.play(note2midi(notes[v]))
 
 
@@ -167,21 +177,22 @@ def notes2(step):
     e = Engine("synthy")
     e.set("attack", 0.01)
     e.set("decay", 3)
-    e.set("db", -5)
-    e.set("sub", -0.8)
-    e.set("lpf", 12000)
+    e.set("db", -12)
+    e.set("lpf", 15100)
+    e.set("delay", -5)
+    e.set("sub", -0.2)
     e.play(note2midi(notes[v]))
 
 
 def loop(step):
-    kick(step)
-    hh(step)
-    sample_drums(step)
-    sample2(step)
-    sample(step)
-    pad(step)
-    notes(step)
-    notes2(step)
+    # kick(step)
+    # hh(step)
+    # sample_drums(step)
+    # sample2(step)
+    # sample(step)
+    # pad(step)
+    # notes(step)
+    # notes2(step)
     pass
 
 

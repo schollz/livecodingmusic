@@ -25,7 +25,7 @@ Routine{
 		s.sync;
 
 		SynthDef("delay", {
-			arg in=0, out=0, secondsPerBeat=0.03125,delayBeats=4,delayFeedback=0.05;
+			arg in=0, out=0, secondsPerBeat=0.06,delayBeats=6,delayFeedback=0.05;
 			var sig;
 			sig = In.ar(in, 2);
 			sig = CombC.ar(
@@ -54,7 +54,7 @@ Routine{
 			outDelay=0, sendDelay=(-25);
 			var car, mod, env, iEnv, amp;
 			var freq=note.midicps;
-			amp=Clip.kr(db.dbamp,0,4);
+			amp=Clip.kr(db.dbamp,0,6);
 
 			//index of modulation
 			iEnv = EnvGen.kr(
@@ -301,6 +301,60 @@ Routine{
 				});
 			});
 		}, '/sample');
+
+
+
+		// from ezra: https://github.com/catfact/zebra/blob/master/lib/Engine_DreadMoon.sc#L20-L41
+		SynthDef.new("piano", {
+			arg out=0, outReverb=0, sendReverb=(-96), outDelay=0, sendDelay=(-96), db=(-10), note=60,
+			atk=0.01,rel=3,lpf=16000,pan=0,
+			noise_hz = 4000, noise_attack=0.002, noise_decay=0.06,
+			tune_up = 1.0005, tune_down = 0.9996, string_decay=3.0,
+			lpf_ratio=2.0, lpf_rq = 4.0, hpf_hz = 40, damp=0, damp_time=0.1;
+
+			var noise, string, delaytime, noise_env, snd, damp_mul;
+			var hz=note.midicps;
+			var amp=db.dbamp;
+
+			damp_mul = LagUD.ar(K2A.ar(1.0 - damp), 0, damp_time);
+
+			noise_env = Decay2.ar(Impulse.ar(0));
+			noise = LFNoise2.ar(noise_hz) * noise_env;
+
+			delaytime = 1.0 / (hz * [tune_up, tune_down]);
+			string = Mix.new(CombL.ar(noise, delaytime, delaytime, string_decay * damp_mul));
+
+			snd = RLPF.ar(string, lpf_ratio * hz, lpf_rq) * amp;
+			snd = HPF.ar(snd, hpf_hz);
+
+			snd = Pan2.ar(snd,pan);
+			snd = LPF.ar(snd,lpf);
+			snd = snd * EnvGen.ar(Env.perc(atk,rel),1,doneAction:2);
+
+			Out.ar(out, snd);
+			Out.ar(outReverb, snd * Clip.kr(sendReverb.dbamp));
+			Out.ar(outDelay, snd * Clip.kr(sendDelay.dbamp));
+			DetectSilence.ar(snd, doneAction:2);
+		}).add;
+
+
+		~oscPiano.free;
+		~oscPiano=OSCFunc({ arg msg, time, addr, recvPort;
+			msg.postln;
+			Synth.head(s,\piano, [
+				\db, msg[1],
+				\note, msg[2],
+				\atk, msg[3],
+				\rel, msg[4],
+				\pan, msg[5],
+				\lpf, msg[6],
+				\sendReverb, msg[7],
+				\sendDelay, msg[8],
+				\outReverb, ~busReverb,
+				\outDelay, ~busDelay,
+			]);
+		}, '/piano');
+
 
 		"ready to listen to livecoding.py".postln;
 	});

@@ -313,7 +313,7 @@ sc_sample_basic = {
     "pan": 0,
     "lpf": 16000,
     "reverb": -24,
-    "sendDelay": -24,
+    "delay": -24,
     "rate": 1,
     "rateLag": 0,
     "start": 0,
@@ -329,10 +329,20 @@ sc_synthy_basic = {
     "attack": 0,
     "decay": 1,
     "pan": 0,
-    "lpf": 320,
+    "lpf": 8000,
     "reverb": -24,
-    "sendDelay": -24,
+    "delay": -24,
     "sub": 0,
+}
+sc_piano_basic = {
+    "db": 0,
+    "note": 20,
+    "attack": 0,
+    "decay": 2,
+    "pan": 0,
+    "lpf": 8000,
+    "reverb": -24,
+    "delay": -24,
 }
 
 
@@ -344,7 +354,7 @@ sc_fm_kick = {
     "pan": 0,
     "lpf": 320,
     "reverb": -24,
-    "sendDelay": -24,
+    "delay": -24,
     "mRatio": 0.4,
     "cRatio": 1.5,
     "index": 0.5,
@@ -365,7 +375,7 @@ sc_fm_hh = {
     "pan": 0,
     "lpf": 16000,
     "reverb": -18,
-    "sendDelay": -36,
+    "delay": -36,
     "mRatio": 1.5,
     "cRatio": 45.9,
     "index": 100,
@@ -387,7 +397,7 @@ sc_fm_pad = {
     "pan": 0,
     "lpf": 16000,
     "reverb": -15,
-    "sendDelay": -15,
+    "delay": -15,
     "mRatio": 2,
     "cRatio": 1,
     "index": 1,
@@ -417,7 +427,7 @@ class Engine:
                 "pan",
                 "lpf",
                 "reverb",
-                "sendDelay",
+                "delay",
                 "mRatio",
                 "cRatio",
                 "index",
@@ -443,7 +453,7 @@ class Engine:
                 "pan",
                 "lpf",
                 "reverb",
-                "sendDelay",
+                "delay",
                 "rate",
                 "rateLag",
                 "start",
@@ -461,10 +471,22 @@ class Engine:
                 "pan",
                 "lpf",
                 "reverb",
-                "sendDelay",
+                "delay",
                 "sub",
             ]
             self.patches['basic'] = sc_synthy_basic
+        elif name == "piano":
+            self.params = [
+                "db",
+                "note",
+                "attack",
+                "decay",
+                "pan",
+                "lpf",
+                "reverb",
+                "delay",
+            ]
+            self.patches['basic'] = sc_piano_basic
         else:
             raise ValueError("no engine " + name + " exists")
         self.patch = self.patches[patch]
@@ -539,7 +561,7 @@ def metronome(fn, bpm):
 #     patch["pan"] = -0.3
 #     patch["loops"] = 4
 #     patch["reverb"] = -96
-#     patch["sendDelay"] = -96
+#     patch["delay"] = -96
 #     patch["lpf"] = 15000
 #     if random.random() < 0.005:
 #         patch["rate"] = patch["rate"] * -1
@@ -587,7 +609,7 @@ def metronome(fn, bpm):
 #     patch["note"] = notes[v]
 #     patch["decay"] = 0.05
 #     patch["db"] = -24
-#     patch["sendDelay"] = -15
+#     patch["delay"] = -15
 #     patch["reverb"] = -25
 #     ic(step, s)
 #     sc_fm(patch)
@@ -628,7 +650,7 @@ def metronome(fn, bpm):
 #     patch["attack"] = 60 / bpm() * 4
 #     patch["decay"] = 60 / bpm() * 4
 #     patch["reverb"] = -5
-#     patch["sendDelay"] = 0
+#     patch["delay"] = 0
 #     patch["db"] = 0
 #     patch["sub"] = 1
 #     patch["notes"] = chord2midi(chords[pulse])
