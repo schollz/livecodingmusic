@@ -1,4 +1,5 @@
 (
+// jackd -R -dalsa -dhw:1,0 -r 44100 -p256 -n3
 Routine{
 	s.reboot;
 	s.waitForBoot({
@@ -98,8 +99,8 @@ Routine{
 			Out.ar(outDelay, car * Clip.kr(sendDelay.dbamp));
 		}).add;
 
-
-		OSCFunc({ arg msg, time, addr, recvPort;
+		~oscfm.free;
+		~oscfm=OSCFunc({ arg msg, time, addr, recvPort;
 			msg.postln;
 			Synth.head(s,\fm, [
 				\db, msg[1],
@@ -125,6 +126,52 @@ Routine{
 				\outDelay, ~busDelay,
 			]);
 		}, '/fm');
+
+
+
+
+
+		SynthDef("synthy", {
+			arg note=50, db=(-10), atk=0.01, rel=3, pan=0,
+			lpf=20000,sub=0,gate=1,
+			out=0, outReverb=0, sendReverb=(-25),
+			outDelay=0, sendDelay=(-25);
+			var snd,env;
+			var perturb1val,perturb2val;
+			sub=Lag.kr(sub,1);
+			snd=Pan2.ar(Pulse.ar((note-12).midicps,LinLin.kr(LFTri.kr(0.5),-1,1,0.2,0.8))/12*sub);
+			snd=snd+Mix.ar({
+				var snd2;
+				snd2=SawDPW.ar(note.midicps);
+				snd2=LPF.ar(snd2,LinExp.kr(SinOsc.kr(rrand(1/30,1/10),rrand(0,2*pi)),-1,1,2000,12000));
+				snd2=DelayC.ar(snd2, rrand(0.01,0.03), LFNoise1.kr(Rand(5,10),0.01,0.02)/15 );
+				Pan2.ar(snd2,VarLag.kr(LFNoise0.kr(1/3),3,warp:\sine))/12
+			}!2);
+			env=EnvGen.ar(Env.perc(atk,rel),gate,doneAction:2);
+			snd=LPF.ar(snd,lpf);
+			snd = snd * env * db.dbamp;
+			Out.ar(out,snd);
+			Out.ar(outReverb, snd * Clip.kr(sendReverb.dbamp));
+			Out.ar(outDelay, snd * Clip.kr(sendDelay.dbamp));
+		}).add;
+
+		~oscsynthy.free;
+		~oscsynth=OSCFunc({ arg msg, time, addr, recvPort;
+			msg.postln;
+			Synth.head(s,\synthy, [
+				\db, msg[1],
+				\note, msg[2],
+				\atk, msg[3],
+				\rel, msg[4],
+				\pan, msg[5],
+				\lpf, msg[6],
+				\sendReverb, msg[7],
+				\sendDelay, msg[8],
+				\sub, msg[9],
+				\outReverb, ~busReverb,
+				\outDelay, ~busDelay,
+			]);
+		}, '/synthy');
 
 
 		SynthDef("samplePlayer", {
@@ -205,7 +252,8 @@ Routine{
 		~samples=Dictionary.new;
 		~samplesPlaying=Dictionary.new;
 
-		OSCFunc({ arg msg, time, addr, recvPort;
+		~oscSample.free;
+		~oscSample=OSCFunc({ arg msg, time, addr, recvPort;
 			var sample=msg[1];
 			if (~samples.at(sample)==nil,{
 				~samples.put(sample,Buffer.read(s,sample));
