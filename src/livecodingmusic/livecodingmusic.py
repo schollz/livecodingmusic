@@ -37,7 +37,7 @@ def get_note(s):
         for _, note in enumerate(notes):
             if len(note) < longest:
                 continue
-            if s.startswith(note):
+            if s.upper().startswith(note.upper()):
                 longest = len(note)
                 note_name = note
                 note_index = i
@@ -62,6 +62,9 @@ def note2midi(note_user):
             octave = last_octave
         notes.append(note_index + 12 * octave)
     return notes
+
+
+print(note2midi("eb4"))
 
 
 def chord2midi(chord_user):

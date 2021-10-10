@@ -235,7 +235,8 @@ def hh(step):
 
     e = Engine("fm", "hh")
     e.set("reverb", -40)
-    e.set("db", -25)
+    e.set("db", -21)
+    e.set("nrel", (step % 16) / 32 + 0.1)
     e.play()
 
 
@@ -255,13 +256,15 @@ def pad(step):
     e = Engine("synthy")
     e.set("attack", 2)
     e.set("decay", 0.1)
-    e.set("reverb", -15)
+    e.set("reverb", -10)
     e.set("db", -5)
-    e.set("lpf", 2620)
+    e.set("lpf", 4000)
     e.play(chord2midi(chords[v]))
 
 
 def notes(step):
+    if random.random() < 0.2:
+        return
     notes = ["a6", "c6", "e6", "d6", "e7", "a5"]
     notes += ["a6", "c6", "e6", "b6", "e7", "a5"]
 
@@ -279,13 +282,16 @@ def notes(step):
     e = Engine("piano")
     e.set("attack", 0.01)
     e.set("decay", 1.5)
-    e.set("db", -20)
+    e.set("db", -18)
     e.set("lpf", 7600)
     e.set("delay", -10)
     e.play(note2midi(notes[v]))
 
 
 def notes2(step):
+    if random.random() < 0.1:
+        return
+
     if er(16, 2, 1)[step % 16] == 0:
         return
     notes = ["c5", "b4", "a3", "e4", "f5", "g5", "e5"]
@@ -300,7 +306,7 @@ def notes2(step):
     e = Engine("piano")
     e.set("attack", 0.01)
     e.set("decay", 1.5)
-    e.set("db", -20)
+    e.set("db", -15)
     e.set("lpf", 18100)
     e.set("delay", -5)
     e.set("sub", 0.5)
@@ -329,7 +335,7 @@ def bass(step):
 
 def loop(step):
     record(False)
-    pad(step)
+    # pad(step)
     # bass(step)
     # kick(step)
     # hh(step)
@@ -337,7 +343,7 @@ def loop(step):
     # sample_drums2(step)
     # sample_glitch(step)
     # sample(step)
-    sample2(step)
+    # sample2(step)
     # notes(step)
     # notes2(step)
     pass
