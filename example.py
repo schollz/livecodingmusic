@@ -33,7 +33,7 @@ def sample(step):
     e.set("reset", v * 12 / 35)
     e.set("start", v * 12 / 35)
     e.set("reverb", -15)
-    e.set("db", -20)
+    e.set("db", -15)
     e.play()
 
 
@@ -52,8 +52,8 @@ def sample2(step):
     e = Engine("sample")
     e.set("sample", sample)
     e.set("loops", 1)
-    e.set("rate", 1)
-    e.set("db", -15)
+    e.set("rate", -1)
+    e.set("db", -10)
     e.set("lpf", 16000)
 
     e.set("reset", 0.3 + (0.1 * v))
@@ -88,12 +88,12 @@ def sample_drums(step):
     s = step % (sample_beats * steps_per_beat)
     start = s / (sample_beats * steps_per_beat)
     e.set("pan", 0)
-    e.set("db", -5)
+    e.set("db", -7)
     e.set("loops", 1 / (1 - start))
     e.set("start", start)
     e.set("reset", start)
     e.set("end", 1)
-    e.set("lpf", 16000)
+    e.set("lpf", 15000)
     e.set("delay", -96)
 
     # if random.random() < 0.05:
@@ -141,12 +141,12 @@ def sample_drums2(step):
     s = step % (sample_beats * steps_per_beat)
     start = s / (sample_beats * steps_per_beat)
     e.set("pan", 0)
-    e.set("db", -5)
+    e.set("db", -7)
     e.set("loops", 1 / (1 - start))
     e.set("start", start)
     e.set("reset", start)
     e.set("end", 1)
-    e.set("lpf", 16000)
+    e.set("lpf", 15000)
     e.set("delay", -96)
 
     # if random.random() < 0.05:
@@ -253,11 +253,11 @@ def pad(step):
     v = globals()[fname].v
 
     e = Engine("synthy")
-    e.set("attack", 1.8)
+    e.set("attack", 2)
     e.set("decay", 0.1)
-    e.set("reverb", -10)
-    e.set("db", -10)
-    e.set("lpf", 4620)
+    e.set("reverb", -15)
+    e.set("db", -5)
+    e.set("lpf", 2620)
     e.play(chord2midi(chords[v]))
 
 
@@ -322,20 +322,20 @@ def bass(step):
 
     e = Engine("bass")
     e.set("attack", 0.01)
-    e.set("decay", 2.25)
+    e.set("decay", 4.25)
     e.set("db", 5)
     e.play(note2midi(notes[v]))
 
 
 def loop(step):
     record(False)
-    pad(step)
-    bass(step)
+    # pad(step)
+    # bass(step)
     # kick(step)
     # hh(step)
     # sample_drums(step)
     # sample_drums2(step)
-    sample_glitch(step)
+    # sample_glitch(step)
     # sample(step)
     # sample2(step)
     # notes(step)
