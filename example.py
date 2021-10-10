@@ -24,7 +24,7 @@ def sample(step):
         globals()[fname].v = -1
     globals()[fname].v = (globals()[fname].v + 1) % 3
     v = globals()[fname].v
-    sample = "SO_MM_115_vocalsynth_cashmere_wet_Am__beats35_bpm115.wav"
+    sample = "samples/SO_MM_115_vocalsynth_cashmere_wet_Am__beats35_bpm115.flac"
     e = Engine("sample")
     e.set("loops", 1)
     e.set("sample", sample)
@@ -48,7 +48,7 @@ def sample2(step):
     globals()[fname].v = (globals()[fname].v + 1) % 4
     v = globals()[fname].v
 
-    sample = "SO_MM_115_vocalsynth_cerulean_wet_Am__beats38_bpm115.wav"
+    sample = "samples/SO_MM_115_vocalsynth_cerulean_wet_Am__beats38_bpm115.flac"
     e = Engine("sample")
     e.set("sample", sample)
     e.set("loops", 1)
@@ -66,16 +66,16 @@ def sample_drums(step):
     if random.random() < 0.5:
         return
     e = Engine("sample")
-    e.set("sample", "loop_amen1_bpm174.wav")
+    e.set("sample", "samples/loop_amen1_bpm174.flac")
     sample_beats = 16
     sample_tempo = 174
-    e.set("sample", "120_8.wav")
+    e.set("sample", "samples/120_8.flac")
     sample_beats = 8
     sample_tempo = 120
-    e.set("sample", "loop_break2_bpm170.wav")
+    e.set("sample", "samples/loop_break2_bpm170.flac")
     sample_beats = 8
     sample_tempo = 170
-    e.set("sample", "loop_break3_bpm170.wav")
+    e.set("sample", "samples/loop_break3_bpm170.flac")
     sample_beats = 16
     sample_tempo = 170
 
@@ -119,16 +119,16 @@ def sample_drums2(step):
     if random.random() < 0.5:
         return
     e = Engine("sample")
-    e.set("sample", "loop_amen1_bpm174.wav")
+    e.set("sample", "samples/loop_amen1_bpm174.flac")
     sample_beats = 16
     sample_tempo = 174
-    e.set("sample", "120_8.wav")
+    e.set("sample", "samples/120_8.flac")
     sample_beats = 8
     sample_tempo = 120
-    e.set("sample", "loop_break3_bpm170.wav")
+    e.set("sample", "samples/loop_break3_bpm170.flac")
     sample_beats = 16
     sample_tempo = 170
-    e.set("sample", "loop_break2_bpm170.wav")
+    e.set("sample", "samples/loop_break2_bpm170.flac")
     sample_beats = 8
     sample_tempo = 170
 
@@ -172,7 +172,7 @@ def sample_glitch(step):
     if random.random() < 0.5:
         return
     e = Engine("sample")
-    e.set("sample", "SO_MM_115_vocalsynth_cashmere_wet_Am__beats35_bpm115.wav")
+    e.set("sample", "samples/SO_MM_115_vocalsynth_cashmere_wet_Am__beats35_bpm115.flac")
     tempo, steps_per_beat = bpm()
     sample_beats = 35
 
@@ -204,7 +204,7 @@ def sample_glitch(step):
         e.set("lpf", random.random() * 2000 + 200)
     if random.random() < 0.07:
         e.set("end", start + 1 / random.choice([48, 64, 72, 96]))
-        e.set("loops", 128)
+        e.set("loops", 12)
         e.set("lpf", random.random() * 4000 + 200)
 
     e.play()
@@ -329,7 +329,7 @@ def bass(step):
 
 def loop(step):
     record(False)
-    # pad(step)
+    pad(step)
     # bass(step)
     # kick(step)
     # hh(step)
@@ -337,7 +337,7 @@ def loop(step):
     # sample_drums2(step)
     # sample_glitch(step)
     # sample(step)
-    # sample2(step)
+    sample2(step)
     # notes(step)
     # notes2(step)
     pass
